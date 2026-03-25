@@ -110,3 +110,43 @@ def test_points_out_of_range_raises_exception():
     
     with pytest.raises(Exception):
         Question(title='q1', points=101) # Acima do máximo
+
+@pytest.fixture
+def question_with_choices():
+    """Retorna uma questão de múltipla escolha com 4 alternativas, sendo 2 corretas."""
+    q = Question(title="Quais são cores primárias?", max_selections=3)
+    q.add_choice("Azul", is_correct=True)
+    q.add_choice("Amarelo", is_correct=True)
+    q.add_choice("Verde", is_correct=False)
+    q.add_choice("Preto", is_correct=False)
+    return q
+
+def test_correct_selected_choices_with_partial_success(question_with_choices):
+    # Usuário seleciona Azul (1), Amarelo (2) e Verde (3)
+    selected_ids = [1, 2, 3]
+    
+    correct_results = question_with_choices.correct_selected_choices(selected_ids)
+    
+    # Deve retornar apenas os IDs 1 e 2 (Azul e Amarelo)
+    assert len(correct_results) == 2
+    assert 1 in correct_results
+    assert 2 in correct_results
+    assert 3 not in correct_results
+
+def test_remove_all_choices_behavior(question_with_choices):
+    assert len(question_with_choices.choices) == 4
+    
+    question_with_choices.remove_all_choices()
+    
+    assert len(question_with_choices.choices) == 0
+    
+    new_choice = question_with_choices.add_choice("Nova Opção")
+    assert new_choice.id == 1
+
+def test_set_correct_choices_bulk_update(question_with_choices):
+    # Verde (3) e Preto (4) eram falsos. Vamos torná-los verdadeiros.
+    question_with_choices.set_correct_choices([3, 4])
+    
+    # Verifica se os objetos foram atualizados
+    assert question_with_choices.choices[2].is_correct is True # Verde
+    assert question_with_choices.choices[3].is_correct is True # Preto
